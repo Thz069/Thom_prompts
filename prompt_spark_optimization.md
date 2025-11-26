@@ -1,65 +1,87 @@
-# PROMPT: OTIMIZAÇÃO E DIAGNÓSTICO DE AWS GLUE (SPARK)
+# PROMPT: AWS Glue (Spark) Optimization and Diagnosis
 
-**Persona:** Aja como um Engenheiro de Dados Principal e Especialista em FinOps de AWS. Você tem conhecimento profundo da arquitetura interna do Apache Spark (Catalyst Optimizer, Gerenciamento de Memória Tungsten, Shuffle Service) e da infraestrutura do AWS Glue.
+**Persona:** Act as a Principal Data Engineer and AWS FinOps Specialist. You have deep knowledge of Apache Spark's internal architecture (Catalyst Optimizer, Tungsten Memory Management, Shuffle Service) and the AWS Glue infrastructure.
 
-**Objetivo:** Analise os dados técnicos, o código e, principalmente, as EVIDÊNCIAS DE LOGS E MÉTRICAS fornecidas abaixo para diagnosticar a causa raiz da ineficiência ou falha do job.
-
----
-
-## 1. CONTEXTO TÉCNICO DO JOB
-
-* **Objetivo do Job:** [Ex: Ingestão de dados de vendas do ERP para o Data Lake]
-* **Versão do Glue:** [Ex: Glue 4.0 (Spark 3.3)]
-* **Tipo de Worker:** [Ex: G.1X / G.2X / Z.2X]
-* **Número de Workers:** [Ex: 50 fixos OU Auto Scaling habilitado (Min 2, Max 50)]
-* **Recursos Ativos:** [Ex: Job Bookmarks, Glue Flex]
-* **Perfil dos Dados (Origem):**
-    * Formato: [Ex: JSON / Parquet / CSV]
-    * Volume Total: [Ex: 500 GB]
-    * Estrutura de Arquivos: [Ex: Milhares de arquivos pequenos (~100KB cada) no S3]
-* **Perfil dos Dados (Destino):**
-    * Formato: [Ex: Parquet Snappy]
-    * Particionamento: [Ex: Particionado por `ano/mes/dia`]
+**Objective:** Analyze the technical data, code, and, most importantly, the **LOGS AND METRICS EVIDENCE** provided below to diagnose the root cause of the job's inefficiency or failure.
 
 ---
 
-## 2. EVIDÊNCIAS DE EXECUÇÃO (Onde está o problema)
+## 1. Job Technical Context
 
-**A. Logs de Erro (CloudWatch / S3 stderr):**
-*(Cole aqui o Stack Trace do erro. Procure por "Caused by", "OutOfMemoryError", "ExecutorLostFailure")*
-> [COLE O ERRO AQUI]
+| **Parameter**           | **Value**                                                               |
+| ----------------------- | ----------------------------------------------------------------------- |
+| **Job Objective**       | `[e.g., Ingest sales data from ERP to Data Lake]`                       |
+| **Glue Version**        | `[e.g., Glue 4.0 (Spark 3.3)]`                                          |
+| **Worker Type**         | `[e.g., G.1X / G.2X / Z.2X]`                                            |
+| **Number of Workers**   | `[e.g., 50 fixed OR Auto Scaling enabled (Min 2, Max 50)]`              |
+| **Active Features**     | `[e.g., Job Bookmarks, Glue Flex]`                                      |
 
-**B. Análise do Spark UI (Performance):**
-*(Dados extraídos do Spark History Server ou Event Logs do S3)*
-* **Estágio Gargalo (ID e Duração):** [Ex: Stage 8 demorou 1h (90% do tempo total)]
-* **Operação do Estágio:** [Ex: SortMergeJoin / GroupBy]
-* **Shuffle Read/Write:** [Ex: O estágio gravou 200GB de Shuffle]
-* **Data Skew (Desbalanceamento):** [Ex: A tarefa mediana leva 2min, mas a tarefa MÁXIMA leva 45min]
-* **GC Time (Garbage Collection):** [Ex: Baixo (<5%) OU Alto (>15% indicando pressão de memória)]
+### Data Profile (Source)
 
-**C. Métricas de Infraestrutura (CloudWatch Metrics):**
-* **Uso de Memória (Heap Usage):** [Ex: Heap dos executores atinge 90% e falha]
-* **Uso de CPU:** [Ex: CPU fica baixa (<10%) a maior parte do tempo (possível gargalo de Driver ou I/O)]
-* **Disco:** [Ex: Houve "Spill to Disk" detectado?]
+- **Format:** `[e.g., JSON / Parquet / CSV]`
+- **Total Volume:** `[e.g., 500 GB]`
+- **File Structure:** `[e.g., Thousands of small files (~100KB each) in S3]`
+
+### Data Profile (Destination)
+
+- **Format:** `[e.g., Parquet Snappy]`
+- **Partitioning:** `[e.g., Partitioned by year/month/day]`
 
 ---
 
-## 3. SNIPPET DE CÓDIGO (LÓGICA CRÍTICA)
+## 2. Execution Evidence (Where the problem is)
 
-*(Abaixo está o trecho do código PySpark correspondente ao estágio lento ou onde ocorre o erro)*
+### A. Error Logs (CloudWatch / S3 stderr)
+
+*(Paste the error Stack Trace here. Look for "Caused by", "OutOfMemoryError", "ExecutorLostFailure")*
+
+> ```
+> [PASTE THE ERROR HERE]
+> ```
+
+### B. Spark UI Analysis (Performance)
+
+*(Data extracted from Spark History Server or S3 Event Logs)*
+
+- **Bottleneck Stage (ID and Duration):** `[e.g., Stage 8 took 1h (90% of total time)]`
+- **Stage Operation:** `[e.g., SortMergeJoin / GroupBy]`
+- **Shuffle Read/Write:** `[e.g., The stage wrote 200GB of Shuffle]`
+- **Data Skew:** `[e.g., The median task takes 2min, but the MAX task takes 45min]`
+- **GC Time (Garbage Collection):** `[e.g., Low (<5%) OR High (>15% indicating memory pressure)]`
+
+### C. Infrastructure Metrics (CloudWatch Metrics)
+
+- **Memory Usage (Heap Usage):** `[e.g., Executors' heap reaches 90% and fails]`
+- **CPU Usage:** `[e.g., CPU remains low (<10%) most of the time (possible Driver or I/O bottleneck)]`
+- **Disk:** `[e.g., Was "Spill to Disk" detected?]`
+
+---
+
+## 3. Critical Code Snippet
+
+*(Below is the PySpark code snippet corresponding to the slow stage or where the error occurs)*
 
 ```python
-# [COLE O TRECHO RELEVANTE DO SEU SCRIPT AQUI]
-# Ex:
-# df_final = df_a.join(df_b, "id", "left").groupBy("regiao").agg(sum("valor"))
+# [PASTE THE RELEVANT SNIPPET OF YOUR SCRIPT HERE]
+# e.g.,
+# df_final = df_a.join(df_b, "id", "left").groupBy("region").agg(sum("valor"))
 # df_final.write.mode("overwrite").parquet("s3://...")
-4. SOLICITAÇÃO DE OTIMIZAÇÃO
-Com base nos logs e contexto acima, forneça:
+```
 
-Diagnóstico da Causa Raiz: Explique tecnicamente o motivo da falha ou lentidão (Ex: Data Skew, Driver OOM, Small Files).
+---
 
-Solução de Código (Refatoração): Reescreva o snippet acima aplicando as correções necessárias (Ex: Salting, Coalesce, Broadcast).
+## 4. Optimization Request
 
-Tuning de Spark (--conf): Quais parâmetros específicos devo configurar? (Ex: spark.sql.shuffle.partitions, spark.memory.fraction).
+Based on the logs and context above, please provide:
 
-Recomendação de Infra: Devo alterar o tipo de worker (G.1X vs G.2X) ou a quantidade?
+1. **Root Cause Diagnosis:**
+   - Technically explain the reason for the failure or slowness (e.g., Data Skew, Driver OOM, Small Files).
+
+2. **Code Solution (Refactoring):**
+   - Rewrite the snippet above, applying the necessary corrections (e.g., Salting, Coalesce, Broadcast).
+
+3. **Spark Tuning (`--conf`):**
+   - Which specific parameters should I configure? (e.g., `spark.sql.shuffle.partitions`, `spark.memory.fraction`).
+
+4. **Infrastructure Recommendation:**
+   - Should I change the worker type (G.1X vs. G.2X) or the quantity?
