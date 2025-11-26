@@ -1,80 +1,65 @@
-# Prompt Spark Optimization
+# PROMPT: OTIMIZAÇÃO E DIAGNÓSTICO DE AWS GLUE (SPARK)
 
-Este documento contém prompts úteis para otimização de Apache Spark.
+**Persona:** Aja como um Engenheiro de Dados Principal e Especialista em FinOps de AWS. Você tem conhecimento profundo da arquitetura interna do Apache Spark (Catalyst Optimizer, Gerenciamento de Memória Tungsten, Shuffle Service) e da infraestrutura do AWS Glue.
 
-## Otimização de Performance
+**Objetivo:** Analise os dados técnicos, o código e, principalmente, as EVIDÊNCIAS DE LOGS E MÉTRICAS fornecidas abaixo para diagnosticar a causa raiz da ineficiência ou falha do job.
 
-### Análise de Jobs Spark
-```
-Analise o seguinte job Spark e sugira otimizações para melhorar a performance:
-- Verifique o particionamento dos dados
-- Identifique possíveis shuffles desnecessários
-- Sugira o uso adequado de cache/persist
-- Avalie o uso de broadcast joins
-```
+---
 
-### Tuning de Configurações
-```
-Revise as configurações do Spark abaixo e sugira ajustes para:
-- spark.executor.memory
-- spark.executor.cores
-- spark.sql.shuffle.partitions
-- spark.default.parallelism
-```
+## 1. CONTEXTO TÉCNICO DO JOB
 
-## Otimização de Código
+* **Objetivo do Job:** [Ex: Ingestão de dados de vendas do ERP para o Data Lake]
+* **Versão do Glue:** [Ex: Glue 4.0 (Spark 3.3)]
+* **Tipo de Worker:** [Ex: G.1X / G.2X / Z.2X]
+* **Número de Workers:** [Ex: 50 fixos OU Auto Scaling habilitado (Min 2, Max 50)]
+* **Recursos Ativos:** [Ex: Job Bookmarks, Glue Flex]
+* **Perfil dos Dados (Origem):**
+    * Formato: [Ex: JSON / Parquet / CSV]
+    * Volume Total: [Ex: 500 GB]
+    * Estrutura de Arquivos: [Ex: Milhares de arquivos pequenos (~100KB cada) no S3]
+* **Perfil dos Dados (Destino):**
+    * Formato: [Ex: Parquet Snappy]
+    * Particionamento: [Ex: Particionado por `ano/mes/dia`]
 
-### Refatoração de Transformações
-```
-Refatore o código Spark abaixo para:
-- Reduzir o número de shuffles
-- Utilizar transformações narrow quando possível
-- Aplicar filtros o mais cedo possível (predicate pushdown)
-- Evitar collect() em datasets grandes
-```
+---
 
-### Uso Eficiente de DataFrames
-```
-Otimize o seguinte código para usar DataFrames/Datasets em vez de RDDs:
-- Aproveite o Catalyst Optimizer
-- Utilize funções built-in do Spark SQL
-- Evite UDFs quando possível
-```
+## 2. EVIDÊNCIAS DE EXECUÇÃO (Onde está o problema)
 
-## Otimização de Memória
+**A. Logs de Erro (CloudWatch / S3 stderr):**
+*(Cole aqui o Stack Trace do erro. Procure por "Caused by", "OutOfMemoryError", "ExecutorLostFailure")*
+> [COLE O ERRO AQUI]
 
-### Gerenciamento de Cache
-```
-Avalie a estratégia de cache/persist no código:
-- Identifique dados que devem ser cacheados
-- Sugira o nível de storage adequado (MEMORY_ONLY, MEMORY_AND_DISK, etc.)
-- Identifique quando fazer unpersist
-```
+**B. Análise do Spark UI (Performance):**
+*(Dados extraídos do Spark History Server ou Event Logs do S3)*
+* **Estágio Gargalo (ID e Duração):** [Ex: Stage 8 demorou 1h (90% do tempo total)]
+* **Operação do Estágio:** [Ex: SortMergeJoin / GroupBy]
+* **Shuffle Read/Write:** [Ex: O estágio gravou 200GB de Shuffle]
+* **Data Skew (Desbalanceamento):** [Ex: A tarefa mediana leva 2min, mas a tarefa MÁXIMA leva 45min]
+* **GC Time (Garbage Collection):** [Ex: Baixo (<5%) OU Alto (>15% indicando pressão de memória)]
 
-### Serialização
-```
-Sugira melhorias de serialização para:
-- Configuração do Kryo serializer
-- Registro de classes para serialização
-- Otimização de estruturas de dados
-```
+**C. Métricas de Infraestrutura (CloudWatch Metrics):**
+* **Uso de Memória (Heap Usage):** [Ex: Heap dos executores atinge 90% e falha]
+* **Uso de CPU:** [Ex: CPU fica baixa (<10%) a maior parte do tempo (possível gargalo de Driver ou I/O)]
+* **Disco:** [Ex: Houve "Spill to Disk" detectado?]
 
-## Otimização de I/O
+---
 
-### Leitura de Dados
-```
-Otimize a leitura de dados considerando:
-- Formato de arquivo (Parquet, ORC, Delta)
-- Particionamento de dados
-- Pruning de colunas e partições
-- Uso de schema inference vs schema explícito
-```
+## 3. SNIPPET DE CÓDIGO (LÓGICA CRÍTICA)
 
-### Escrita de Dados
-```
-Melhore a escrita de dados para:
-- Coalesce vs Repartition
-- Compressão adequada
-- Número de arquivos de saída
-- Particionamento de saída
-```
+*(Abaixo está o trecho do código PySpark correspondente ao estágio lento ou onde ocorre o erro)*
+
+```python
+# [COLE O TRECHO RELEVANTE DO SEU SCRIPT AQUI]
+# Ex:
+# df_final = df_a.join(df_b, "id", "left").groupBy("regiao").agg(sum("valor"))
+# df_final.write.mode("overwrite").parquet("s3://...")
+4. SOLICITAÇÃO DE OTIMIZAÇÃO
+Com base nos logs e contexto acima, forneça:
+
+Diagnóstico da Causa Raiz: Explique tecnicamente o motivo da falha ou lentidão (Ex: Data Skew, Driver OOM, Small Files).
+
+Solução de Código (Refatoração): Reescreva o snippet acima aplicando as correções necessárias (Ex: Salting, Coalesce, Broadcast).
+
+Tuning de Spark (--conf): Quais parâmetros específicos devo configurar? (Ex: spark.sql.shuffle.partitions, spark.memory.fraction).
+
+Recomendação de Infra: Devo alterar o tipo de worker (G.1X vs G.2X) ou a quantidade?
